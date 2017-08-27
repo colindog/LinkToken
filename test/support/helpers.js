@@ -104,9 +104,7 @@ Web3 = require('web3');
   getLatestTimestamp = async function getLatestTimestamp () {
     let latestBlock = await getLatestBlock()
     return web3.toDecimal(latestBlock.timestamp);
-  };
-
-  fastForwardTo = async function fastForwardTo(target) {
+  }; fastForwardTo = async function fastForwardTo(target) {
     let now = await getLatestTimestamp();
     assert.isAbove(target, now, "Cannot fast forward to the past");
     let difference = target - now;
@@ -191,5 +189,9 @@ Web3 = require('web3');
       assert.isAtLeast(index, 0, (`#${method} is expected to be public`))
     }
   };
+
+  getTxReceipt = async function getTxReceipt(txid) {
+    return await eth.getTransactionReceipt([txid]);
+  }
 
 })();

@@ -24,7 +24,8 @@ contract TokenSale is Ownable {
   }
 
   function ()
-  public payable onlyActive {
+  payable {
+    if(!active) throw;
     Payment(msg.sender, msg.value);
   }
 
@@ -50,14 +51,6 @@ contract TokenSale is Ownable {
   function withdraw()
   public onlyOwner {
     owner.transfer(this.balance);
-  }
-
-
-  // MODIFIERS
-
-  modifier onlyActive {
-    require(active);
-    _;
   }
 
 }

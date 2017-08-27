@@ -55,14 +55,18 @@ contract('TokenSale', () => {
       it("accepts the payment", async () => {
         let saleBalance = await getBalance(sale.address);
 
-        await sendTransaction({
+        let txid = await sendTransaction({
           from: purchaser,
           to: sale.address,
           value: purchaseAmount,
         });
+        let receipt = await getTxReceipt(txid);
 
         let postSale = await getBalance(sale.address);
         assert.equal(saleBalance.add(purchaseAmount).toString(), postSale.toString());
+
+        console.log(receipt);
+        assert.equal(receipt.gasUsed.toString(), '21000');
       });
 
       it("logs a payment event reporting the purchaser and amount", async () => {
