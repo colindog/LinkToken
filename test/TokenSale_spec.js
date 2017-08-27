@@ -22,6 +22,7 @@ contract('TokenSale', () => {
       'activate',
       'deactivate',
       'transferOwnership',
+      'withdraw',
     ];
 
     checkPublicABI(TokenSale, expectedABI);
@@ -170,6 +171,50 @@ contract('TokenSale', () => {
 
         let active = await sale.active.call();
         assert(active);
+      });
+    });
+  });
+
+  describe("withdraw", () => {
+    let ownerBalance, saleBalance;
+
+    beforeEach(async () => {
+      let purchasedAmount = toWei(1);
+
+      await sale.activate({from: owner});
+      await sendTransaction({
+        from: purchaser,
+        to: sale.address,
+        value: purchasedAmount,
+      });
+
+      saleBalance = await getBalance(sale.address);
+      assert.equal(saleBalance.toString(), purchasedAmount.toString());
+
+      ownerBalance = await getBalance(owner);
+    });
+
+    context("when it is called by the owner", () => {
+      it("moves the sale funds to the owner's account", async () => {
+        await sale.withdraw({from: owner});
+
+        let postSaleBalance = await getBalance(sale.address);
+        assert.equal(postSaleBalance.toString(), '0');
+
+        let postOwnerBalance = await getBalance(owner);
+        let soldSubGas = saleBalance.minus(toWei(0.003));
+        assert.isAbove(postOwnerBalance.toString(), ownerBalance.add(soldSubGas).toString(), );
+      });
+    });
+
+    context("when it is called by someone other than the owner", () => {
+      it("does NOT move any of the sale funds", async () => {
+        await assertActionThrows(async () => {
+          await sale.withdraw({from: deployer});
+        });
+
+        let postSaleBalance = await getBalance(sale.address);
+        assert.equal(postSaleBalance.toString(), saleBalance.toString());
       });
     });
   });

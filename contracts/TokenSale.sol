@@ -44,6 +44,14 @@ contract TokenSale is Ownable {
     active = false;
   }
 
+  /**
+   * @dev Allows the owner to withdraw the sale funds.
+   */
+  function withdraw()
+  public onlyOwner {
+    owner.transfer(this.balance);
+  }
+
 
   // MODIFIERS
 
