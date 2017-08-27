@@ -4,11 +4,12 @@ require('./support/helpers.js');
 
 contract('TokenSale', () => {
   let TokenSale = artifacts.require("./contracts/TokenSale.sol");
-  let deployer, owner, sale;
+  let deployer, owner, purchaser, sale;
 
   beforeEach(async () => {
     deployer = Accounts[0];
     owner = Accounts[1];
+    purchaser = Accounts[2];
     sale = await TokenSale.new(owner, {from: deployer});
   });
 
@@ -37,6 +38,84 @@ contract('TokenSale', () => {
       let active = await sale.active.call();
 
       assert(!active);
+    });
+  });
+
+  describe("the fallback function", () => {
+    let purchaseAmount = toWei(10);
+
+    context("when the contract is active", () => {
+      beforeEach(async () => {
+        await sale.activate({from: owner});
+        let active = await sale.active.call();
+        assert(active);
+      });
+
+      it("accepts the payment", async () => {
+        let saleBalance = await getBalance(sale.address);
+
+        await sendTransaction({
+          from: purchaser,
+          to: sale.address,
+          value: purchaseAmount,
+        });
+
+        let postSale = await getBalance(sale.address);
+        assert.equal(saleBalance.add(purchaseAmount).toString(), postSale.toString());
+      });
+
+      it("logs a payment event reporting the purchaser and amount", async () => {
+        let events = await getEvents(sale);
+        assert.equal(events.length, 0);
+
+        await sendTransaction({
+          from: purchaser,
+          to: sale.address,
+          value: purchaseAmount,
+        });
+
+        events = await getEvents(sale);
+        assert.equal(events.length, 1);
+
+        let event = events[0];
+        assert.equal(event.args.from, purchaser);
+        assert.equal(event.args.amount.toString(), purchaseAmount.toString());
+      });
+    });
+
+    context("when the contract is deactivated", () => {
+      beforeEach(async () => {
+        let active = await sale.active.call();
+        assert(!active);
+      });
+
+      it("does NOT accept payment", async () => {
+        let saleBalance = await getBalance(sale.address);
+
+        await assertActionThrows(async () => {
+          await sendTransaction({
+            from: purchaser,
+            to: sale.address,
+            value: purchaseAmount,
+          });
+        });
+
+        let postSale = await getBalance(sale.address);
+        assert.equal(saleBalance.toString(), postSale.toString());
+      });
+
+      it("does NOT log an event", async () => {
+        await assertActionThrows(async () => {
+          await sendTransaction({
+            from: purchaser,
+            to: sale.address,
+            value: purchaseAmount,
+          });
+        });
+
+        let events = await getEvents(sale);
+        assert.equal(events.length, 0);
+      });
     });
   });
 

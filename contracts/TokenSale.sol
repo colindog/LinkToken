@@ -13,12 +13,19 @@ import "./Ownable.sol";
 contract TokenSale is Ownable {
   bool public active;
 
+  event Payment(address indexed from, uint indexed amount);
+
   /**
    * @dev The TokenSale constructor constructor sets the owner.
    */
   function TokenSale(address _owner)
   public {
     transferOwnership(_owner);
+  }
+
+  function ()
+  public payable onlyActive {
+    Payment(msg.sender, msg.value);
   }
 
   /**
@@ -36,4 +43,13 @@ contract TokenSale is Ownable {
   public onlyOwner {
     active = false;
   }
+
+
+  // MODIFIERS
+
+  modifier onlyActive {
+    require(active);
+    _;
+  }
+
 }
